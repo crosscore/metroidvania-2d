@@ -170,7 +170,7 @@ public class Player : MonoBehaviour
     [System.Obsolete]
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Needle")) // Note: Add "Needle" tag to needle objects
+        if (collision.gameObject.CompareTag("Needle"))
         {
             Die();
         }
