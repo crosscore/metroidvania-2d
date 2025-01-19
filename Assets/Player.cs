@@ -21,6 +21,7 @@ public class Player : MonoBehaviour
     private GameOverManager gameOverManager;
     private bool isDead = false;
     private float deathAnimationDuration = 0.01f;
+    private Vector3 deathPosition; // Store position at death
 
     [System.Obsolete]
     void Start()
@@ -51,6 +52,11 @@ public class Player : MonoBehaviour
         {
             HandleJumpInput();
             UpdateAnimationStates();
+        }
+        else
+        {
+            // Ensure the character stays at death position
+            transform.position = deathPosition;
         }
     }
 
@@ -115,13 +121,17 @@ public class Player : MonoBehaviour
         if (!isDead)
         {
             isDead = true;
+            deathPosition = transform.position; // Store the position where death occurred
 
-            // Stop all movement
+            // Immediately stop all movement
             if (rg != null)
             {
                 rg.velocity = Vector2.zero;
-                rg.isKinematic = true;
+                rg.simulated = false; // Completely disable physics simulation
             }
+
+            // Disable player input handling
+            this.enabled = false;
 
             // Disable collider
             Collider2D collider = GetComponent<Collider2D>();
@@ -135,6 +145,9 @@ public class Player : MonoBehaviour
             {
                 animator.SetBool("isDead", true);
             }
+
+            // Re-enable the script just for animation and game over handling
+            this.enabled = true;
 
             // Start coroutine to show game over after animation
             StartCoroutine(ShowGameOverAfterAnimation());
@@ -157,7 +170,7 @@ public class Player : MonoBehaviour
     [System.Obsolete]
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.name == "Needle")
+        if (collision.gameObject.CompareTag("Needle")) // Note: Add "Needle" tag to needle objects
         {
             Die();
         }
