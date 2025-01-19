@@ -20,6 +20,7 @@ public class Player : MonoBehaviour
 
     private GameOverManager gameOverManager;
     private bool isDead = false;
+    private float deathAnimationDuration = 0.01f;
 
     [System.Obsolete]
     void Start()
@@ -28,6 +29,20 @@ public class Player : MonoBehaviour
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         gameOverManager = FindObjectOfType<GameOverManager>();
+
+        // Ensure the animation duration is properly set
+        if (animator != null)
+        {
+            RuntimeAnimatorController ac = animator.runtimeAnimatorController;
+            foreach (AnimationClip clip in ac.animationClips)
+            {
+                if (clip.name.Contains("Death-Animation"))
+                {
+                    deathAnimationDuration = clip.length;
+                    break;
+                }
+            }
+        }
     }
 
     void Update()
@@ -101,71 +116,50 @@ public class Player : MonoBehaviour
         {
             isDead = true;
 
-            // アニメーターがある場合は死亡アニメーションを再生
-            if (animator != null)
-            {
-                animator.SetTrigger("Die");
-            }
-
-            // アニメーションの長さに基づいてGameOver表示を遅延実行
-            StartCoroutine(ShowGameOverAfterAnimation());
-
-            // GameOverManagerを通じてGame Over表示
-            if (gameOverManager != null)
-            {
-                gameOverManager.ShowGameOver();
-            }
-
-            // 必要に応じてプレイヤーの動きを停止
+            // Stop all movement
             if (rg != null)
             {
-                rg.linearVelocity = Vector2.zero;
+                rg.velocity = Vector2.zero;
                 rg.isKinematic = true;
             }
 
-            // コライダーを無効化（オプション）
+            // Disable collider
             Collider2D collider = GetComponent<Collider2D>();
             if (collider != null)
             {
                 collider.enabled = false;
             }
-        }
-    }
 
-    [System.Obsolete]
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        // Check if the collision is with a Needle object
-        if (collision.gameObject.name == "Needle")
-        {
-            Die();
+            // Play death animation if animator exists
+            if (animator != null && animator.isActiveAndEnabled)
+            {
+                animator.SetBool("isDead", true);
+            }
+
+            // Start coroutine to show game over after animation
+            StartCoroutine(ShowGameOverAfterAnimation());
         }
     }
 
     [System.Obsolete]
     private IEnumerator ShowGameOverAfterAnimation()
     {
-        // アニメーションの再生時間待機（例：0.85秒）
-        yield return new WaitForSeconds(0.85f);
+        // Wait for the death animation to complete
+        yield return new WaitForSeconds(deathAnimationDuration);
 
-        // GameOverManagerを通じてGame Over表示
+        // Show Game Over screen
         if (gameOverManager != null)
         {
             gameOverManager.ShowGameOver();
         }
+    }
 
-        // プレイヤーの動きを停止
-        if (rg != null)
+    [System.Obsolete]
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.name == "Needle")
         {
-            rg.linearVelocity = Vector2.zero;
-            rg.isKinematic = true;
-        }
-
-        // コライダーを無効化
-        Collider2D collider = GetComponent<Collider2D>();
-        if (collider != null)
-        {
-            collider.enabled = false;
+            Die();
         }
     }
 }
